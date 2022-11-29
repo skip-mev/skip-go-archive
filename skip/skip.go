@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/base64"
 	"encoding/json"
-	"fmt"
 	"net/http"
 
 	"github.com/tendermint/tendermint/crypto/secp256k1"
@@ -38,7 +37,7 @@ func SignBundle(bundle [][]byte, privateKeyBytes []byte) ([]string, []byte) {
 	return base64EncodedBundle, bundleSignature
 }
 
-func SendBundle(b64EncodedSignedBundle []string, bundleSignature []byte, publicKey string, rpcURL string, desiredHeight string, sync bool) {
+func SendBundle(b64EncodedSignedBundle []string, bundleSignature []byte, publicKey string, rpcURL string, desiredHeight string, sync bool) (*http.Response, error) {
 	// Send signed bundle to RPC
 	var method string
 	if sync {
@@ -66,19 +65,17 @@ func SendBundle(b64EncodedSignedBundle []string, bundleSignature []byte, publicK
 	}
 
 	response, err := http.Post(rpcURL, "application/json", bytes.NewBuffer(json_data))
-
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
-
-	var result map[string]interface{}
-
-	json.NewDecoder(response.Body).Decode(&result)
-
-	fmt.Println(result)
+	return response, nil
 }
 
-func SignAndSendBundle(bundle [][]byte, privateKeyBytes []byte, publicKey string, rpcURL string, desiredHeight string, sync bool) {
+func SignAndSendBundle(bundle [][]byte, privateKeyBytes []byte, publicKey string, rpcURL string, desiredHeight string, sync bool) (*http.Response, error) {
 	b64EncodedSignedBundle, bundleSignature := SignBundle(bundle, privateKeyBytes)
-	SendBundle(b64EncodedSignedBundle, bundleSignature, publicKey, rpcURL, desiredHeight, sync)
+	response, err := SendBundle(b64EncodedSignedBundle, bundleSignature, publicKey, rpcURL, desiredHeight, sync)
+	if err != nil {
+		return nil, err
+	}
+	return response, nil
 }
