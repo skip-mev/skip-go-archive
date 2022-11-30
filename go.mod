@@ -1,4 +1,4 @@
-module skip-go
+module github.com/skip-mev/skip-go
 
 go 1.18
 
