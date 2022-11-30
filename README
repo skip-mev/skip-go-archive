@@ -1,0 +1,29 @@
+# skip-go
+
+A util for signing and sending bundles through the Skip relayer.
+
+# Usage
+
+skipjs exposes a single default export, `SkipBundleClient`.
+`SkipBundleClient` has two functions:
+`signBundle` and `sendBundle`.
+
+```
+func SignBundle(bundle [][]byte, privateKeyBytes []byte) ([]string, []byte)
+
+func SendBundle(b64EncodedSignedBundle []string, bundleSignature []byte, publicKey string, rpcURL string, desiredHeight string, sync bool) (*http.Response, error)
+```
+
+## SignBundle
+`SignBundle` is used to sign a bundle of transactions. It must be provided with an array of `[]byte`, and a sepc256k1 private key (as `[]byte`), used to sign the bundle.
+The transactions argument should be an array of base64-encoded transaction strings. The encoded bytes can be either Cosmos SDK `TxRaw`s or Ethereum native transactions (such as those produced from `ethers`, for Ethermint EVM chains. See the examples for more details.
+`signBundle` returns a (`SignedBundle`, `bundleSignature`), which can then both be passed to `SendBundle` to send the bundle to the relayer.
+
+## SendBundle
+
+`SendBundle` sends a `b64EncodedSignedBundle` to the Sentinel for inclusion in the auction.
+A `b64EncodedSignedBundle` is the first output of `SignBundle` that can be reused here.
+A `bundleSignature` is the second output of `SignBundle` that can be reused here.
+The `publickey` is the address, as a `string`, that was used to sign the bundle.
+`desiredHeight` is the desired height for the bundle to be included on-chain. Submitted bundles will only be considered in the auction for this height. Passing `0` as `desiredHeight` will cause the Skip Sentinel to consider the bundle for the immediate next height.
+`sync` specifies whether to use the async or sync RPC endpoint. If set to `true`, the promise will not resolve until the bundle has been simulated. If set to `false`, the promise resolves on bundle submission, prior to its simulation. Our recommendation is to set this to `true` by default in order to debug responses (it will not affect how fast your bundle is submitted).
